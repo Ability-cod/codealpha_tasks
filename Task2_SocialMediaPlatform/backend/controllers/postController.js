@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { postDir } = require('../middleware/upload');
+const { postDir, mediaTypeFor } = require('../middleware/upload');
 const {
   createPost,
   getPostById,
@@ -17,23 +17,24 @@ const removePostImage = (imageUrl) => {
 };
 
 const createNewPost = async (req, res) => {
-  const imageUrl = req.file ? `/uploads/posts/${req.file.filename}` : null;
+  const mediaUrl = req.file ? `/uploads/posts/${req.file.filename}` : null;
+  const mediaType = req.file ? mediaTypeFor(req.file.mimetype) : null;
   try {
     const content = (req.body.content || '').trim();
 
-    if (!content && !imageUrl) {
-      removePostImage(imageUrl);
-      return res.status(400).json({ message: 'Write something or add an image to post' });
+    if (!content && !mediaUrl) {
+      removePostImage(mediaUrl);
+      return res.status(400).json({ message: 'Write something or add media to post' });
     }
     if (content.length > 2000) {
-      removePostImage(imageUrl);
+      removePostImage(mediaUrl);
       return res.status(400).json({ message: 'Post is too long' });
     }
 
-    const id = await createPost(req.user.id, content, imageUrl);
+    const id = await createPost(req.user.id, content, mediaUrl, mediaType);
     res.status(201).json({ message: 'Post created', id });
   } catch (error) {
-    removePostImage(imageUrl);
+    removePostImage(mediaUrl);
     console.error(error);
     res.status(500).json({ message: 'Something went wrong on the server' });
   }

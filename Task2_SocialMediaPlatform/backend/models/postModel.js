@@ -1,9 +1,9 @@
 const pool = require('../config/db');
 
-const createPost = async (userId, content, imageUrl) => {
+const createPost = async (userId, content, imageUrl, mediaType) => {
   const [result] = await pool.query(
-    'INSERT INTO posts (user_id, content, image_url) VALUES (?, ?, ?)',
-    [userId, content, imageUrl]
+    'INSERT INTO posts (user_id, content, image_url, media_type) VALUES (?, ?, ?, ?)',
+    [userId, content, imageUrl, mediaType]
   );
   return result.insertId;
 };
@@ -17,13 +17,17 @@ const deletePost = async (id) => {
   await pool.query('DELETE FROM posts WHERE id = ?', [id]);
 };
 
+const selectFields = `
+  p.id, p.content, p.image_url, p.media_type, p.created_at,
+  u.id AS author_id, u.name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar,
+  (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS like_count,
+  (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
+  EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) AS liked_by_me
+`;
+
 const getFeedPosts = async (userId, limit, offset) => {
   const [rows] = await pool.query(
-    `SELECT p.id, p.content, p.image_url, p.created_at,
-            u.id AS author_id, u.name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar,
-            (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS like_count,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
-            EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) AS liked_by_me
+    `SELECT ${selectFields}
      FROM posts p
      JOIN users u ON p.user_id = u.id
      WHERE p.user_id = ? OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?)
@@ -36,11 +40,7 @@ const getFeedPosts = async (userId, limit, offset) => {
 
 const getExplorePosts = async (userId, limit, offset) => {
   const [rows] = await pool.query(
-    `SELECT p.id, p.content, p.image_url, p.created_at,
-            u.id AS author_id, u.name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar,
-            (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS like_count,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
-            EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) AS liked_by_me
+    `SELECT ${selectFields}
      FROM posts p
      JOIN users u ON p.user_id = u.id
      ORDER BY p.created_at DESC
@@ -52,11 +52,7 @@ const getExplorePosts = async (userId, limit, offset) => {
 
 const getUserPosts = async (profileUserId, viewerId, limit, offset) => {
   const [rows] = await pool.query(
-    `SELECT p.id, p.content, p.image_url, p.created_at,
-            u.id AS author_id, u.name AS author_name, u.username AS author_username, u.avatar_url AS author_avatar,
-            (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS like_count,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
-            EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ?) AS liked_by_me
+    `SELECT ${selectFields}
      FROM posts p
      JOIN users u ON p.user_id = u.id
      WHERE p.user_id = ?

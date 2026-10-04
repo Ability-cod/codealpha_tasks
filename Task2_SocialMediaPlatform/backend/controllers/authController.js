@@ -1,10 +1,17 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
 const { findUserByEmail, findUserByUsername, createUser } = require('../models/userModel');
+const { getSecret } = require('../models/twoFactorModel');
 
 const signToken = (user) =>
   jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
+    expiresIn: '90d'
+  });
+
+const signTempToken = (userId) =>
+  jwt.sign({ id: userId, stage: 'pending-2fa' }, process.env.JWT_SECRET, {
+    expiresIn: '5m'
   });
 
 const slugifyUsername = (value) =>
@@ -63,6 +70,10 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+    if (found.two_factor_enabled) {
+      return res.json({ requires2FA: true, tempToken: signTempToken(found.id) });
+    }
+
     const user = {
       id: found.id,
       name: found.name,
@@ -78,4 +89,38 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const verify2FA = async (req, res) => {
+  try {
+    const { tempToken, code } = req.body;
+    let payload;
+    try {
+      payload = jwt.verify(tempToken, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'This step has expired. Please log in again' });
+    }
+    if (payload.stage !== 'pending-2fa') {
+      return res.status(401).json({ message: 'Invalid verification request' });
+    }
+
+    const secretRecord = await getSecret(payload.id);
+    const verified = speakeasy.totp.verify({
+      secret: secretRecord.two_factor_secret,
+      encoding: 'base32',
+      token: code,
+      window: 1
+    });
+
+    if (!verified) {
+      return res.status(400).json({ message: 'Invalid authentication code' });
+    }
+
+    const { findUserById } = require('../models/userModel');
+    const found = await findUserById(payload.id);
+    res.json({ message: 'Logged in successfully', token: signToken(found), user: found });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong on the server' });
+  }
+};
+
+module.exports = { register, login, verify2FA };

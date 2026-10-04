@@ -9,37 +9,52 @@ const postDir = path.join(__dirname, '..', 'uploads', 'posts');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const extensions = {
+const imageExtensions = {
   'image/jpeg': '.jpg',
   'image/png': '.png',
   'image/webp': '.webp',
   'image/gif': '.gif'
 };
 
-const fileFilter = (req, file, cb) => {
-  if (extensions[file.mimetype]) cb(null, true);
+const videoExtensions = {
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'video/quicktime': '.mov'
+};
+
+const mediaExtensions = { ...imageExtensions, ...videoExtensions };
+
+const imageFilter = (req, file, cb) => {
+  if (imageExtensions[file.mimetype]) cb(null, true);
   else cb(new Error('Only JPG, PNG, WEBP or GIF images are allowed'));
 };
 
-const makeStorage = (destination) =>
+const mediaFilter = (req, file, cb) => {
+  if (mediaExtensions[file.mimetype]) cb(null, true);
+  else cb(new Error('Only JPG, PNG, WEBP, GIF images or MP4, WEBM, MOV videos are allowed'));
+};
+
+const makeStorage = (destination, extMap) =>
   multer.diskStorage({
     destination: (req, file, cb) => cb(null, destination),
     filename: (req, file, cb) => {
       const unique = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-      cb(null, `${unique}${extensions[file.mimetype]}`);
+      cb(null, `${unique}${extMap[file.mimetype]}`);
     }
   });
 
 const uploadAvatar = multer({
-  storage: makeStorage(avatarDir),
-  fileFilter,
+  storage: makeStorage(avatarDir, imageExtensions),
+  fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 const uploadPostImage = multer({
-  storage: makeStorage(postDir),
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  storage: makeStorage(postDir, mediaExtensions),
+  fileFilter: mediaFilter,
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
-module.exports = { uploadAvatar, uploadPostImage, avatarDir, postDir };
+const mediaTypeFor = (mimetype) => (videoExtensions[mimetype] ? 'video' : 'image');
+
+module.exports = { uploadAvatar, uploadPostImage, avatarDir, postDir, mediaTypeFor, videoExtensions };
