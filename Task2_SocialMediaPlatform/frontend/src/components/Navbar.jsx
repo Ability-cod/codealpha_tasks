@@ -98,6 +98,7 @@ export default function Navbar() {
             <Avatar src={user.avatar_url} name={user.name} size={30} />
             <span>{user.name.split(' ')[0]}</span>
           </Link>
+          <Link to="/settings/security" className="btn btn-ghost btn-sm">Security</Link>
           <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Log out</button>
         </div>
       </div>

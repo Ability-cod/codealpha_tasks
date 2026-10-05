@@ -95,6 +95,7 @@ export default function PostCard({ post, onDeleted }) {
   };
 
   const src = imageSrc(post.image_url);
+const isVideo = post.media_type === 'video';
 
   return (
     <article className="post-card">
@@ -114,7 +115,13 @@ export default function PostCard({ post, onDeleted }) {
       </div>
 
       {post.content && <p className="post-content">{post.content}</p>}
-      {src && <img src={src} alt="" className="post-image" />}
+      {src && (
+  isVideo ? (
+    <video src={src} controls className="post-image" />
+  ) : (
+    <img src={src} alt="" className="post-image" />
+  )
+)}
 
       <div className="post-stats">
         <span>{likeCount} {likeCount === 1 ? 'like' : 'likes'}</span>

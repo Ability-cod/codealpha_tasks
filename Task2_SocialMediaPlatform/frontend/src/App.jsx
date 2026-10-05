@@ -8,6 +8,7 @@ import EditProfile from './pages/EditProfile';
 import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Security from './pages/Security';
 
 export default function App() {
   return (
@@ -65,6 +66,15 @@ export default function App() {
                 <Link to="/" className="btn">Back to feed</Link>
               </div>
             }
+          />
+
+          <Route
+           path="/settings/security"
+           element={
+            <ProtectedRoute>
+            <Security />
+            </ProtectedRoute>
+        }
           />
         </Routes>
       </main>

@@ -10,43 +10,55 @@ export default function PostComposer({ onPosted }) {
   const fileRef = useRef(null);
 
   const [content, setContent] = useState('');
-  const [imageFile, setImageFile] = useState(null);
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaKind, setMediaKind] = useState(null);
   const [preview, setPreview] = useState(null);
   const [posting, setPosting] = useState(false);
 
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      notify('Please choose an image file', 'error');
+
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      notify('Please choose an image or video file', 'error');
       return;
     }
-    setImageFile(file);
+    if (isVideo && file.size > 50 * 1024 * 1024) {
+      notify('Video must be smaller than 50MB', 'error');
+      return;
+    }
+
+    setMediaFile(file);
+    setMediaKind(isVideo ? 'video' : 'image');
     setPreview(URL.createObjectURL(file));
   };
 
-  const clearImage = () => {
-    setImageFile(null);
+  const clearMedia = () => {
+    setMediaFile(null);
+    setMediaKind(null);
     setPreview(null);
     if (fileRef.current) fileRef.current.value = '';
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim() && !imageFile) {
-      notify('Write something or add an image', 'error');
+    if (!content.trim() && !mediaFile) {
+      notify('Write something or add media', 'error');
       return;
     }
 
     setPosting(true);
     const body = new FormData();
     body.append('content', content.trim());
-    if (imageFile) body.append('image', imageFile);
+    if (mediaFile) body.append('image', mediaFile);
 
     try {
       await api('/posts', { method: 'POST', token, body });
       setContent('');
-      clearImage();
+      clearMedia();
       notify('Post shared');
       onPosted();
     } catch (err) {
@@ -69,8 +81,12 @@ export default function PostComposer({ onPosted }) {
         />
         {preview && (
           <div className="composer-preview">
-            <img src={preview} alt="Preview" />
-            <button type="button" className="preview-remove" onClick={clearImage}>×</button>
+            {mediaKind === 'video' ? (
+              <video src={preview} controls />
+            ) : (
+              <img src={preview} alt="Preview" />
+            )}
+            <button type="button" className="preview-remove" onClick={clearMedia}>×</button>
           </div>
         )}
         <div className="composer-actions">
@@ -80,7 +96,7 @@ export default function PostComposer({ onPosted }) {
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="M21 15l-5-5L5 21" />
             </svg>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} hidden />
+            <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm,video/quicktime" onChange={handleFile} hidden />
           </label>
           <button className="btn btn-sm" disabled={posting}>
             {posting ? 'Posting...' : 'Post'}
