@@ -9,6 +9,7 @@ import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Security from './pages/Security';
+import Messages from './pages/Messages';
 
 export default function App() {
   return (
@@ -76,6 +77,23 @@ export default function App() {
             </ProtectedRoute>
         }
           />
+
+        <Route
+  path="/messages"
+  element={
+    <ProtectedRoute>
+      <Messages />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/messages/:username"
+  element={
+    <ProtectedRoute>
+      <Messages />
+    </ProtectedRoute>
+  }
+/>  
         </Routes>
       </main>
     </div>

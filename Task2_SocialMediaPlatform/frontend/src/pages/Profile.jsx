@@ -94,6 +94,9 @@ export default function Profile() {
                 {profile.isFollowing ? 'Following' : 'Follow'}
               </button>
             )}
+            {!isSelf && (
+            <Link to={`/messages/${profile.username}`} className="btn btn-ghost btn-sm">Message</Link>
+       )}
           </div>
 
           {profile.bio && <p className="profile-bio">{profile.bio}</p>}
