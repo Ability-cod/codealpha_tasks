@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -9,6 +9,7 @@ import TaskModal from '../components/TaskModal';
 
 export default function ProjectBoard() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { token, user } = useAuth();
   const socket = useSocket();
   const { notify } = useToast();
@@ -159,6 +160,17 @@ export default function ProjectBoard() {
     }
   };
 
+    const deleteProject = async () => {
+    if (!window.confirm(`Delete "${project.name}"? This removes all lists, tasks and comments permanently.`)) return;
+    try {
+      await api(`/projects/${id}`, { method: 'DELETE', token });
+      notify('Project deleted');
+      navigate('/');
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+  };
+
   if (loading || !project) return <p>Loading...</p>;
 
   return (
@@ -168,9 +180,14 @@ export default function ProjectBoard() {
           <h1 className="page-title" style={{ marginBottom: 2 }}>{project.name}</h1>
           <p style={{ color: 'var(--muted)' }}>{project.description}</p>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => setShowMembers((prev) => !prev)}>
-          Members ({project.members.length})
-        </button>
+        <div className="row">
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowMembers((prev) => !prev)}>
+            Members ({project.members.length})
+          </button>
+          {project.myRole === 'owner' && (
+            <button className="btn btn-danger btn-sm" onClick={deleteProject}>Delete project</button>
+          )}
+        </div>
       </div>
 
       {showMembers && (
