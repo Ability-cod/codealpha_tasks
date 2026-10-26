@@ -12,8 +12,7 @@ This repository contains the completed tasks for the **CodeAlpha Full Stack Deve
 |---|---|---|---|
 | 1 | [E-commerce Store](./Task1_EcommerceStore) | ✅ Complete | React, Node.js/Express, MySQL |
 | 2 | [Pulse Connect — Social Media Platform](./Task2_SocialMediaPlatform) | ✅ Complete | React, Node.js/Express, MySQL, Socket.io |
-| 3 | Project Management Tool | ⏳ Planned | React, Node.js/Express, MySQL |
-
+| 3 | [Taskly — Project Management Tool](./Task3_ProjectManagementTool) | ✅ Complete | React, Node.js/Express, MySQL, Socket.io |
 Each task lives in its own folder with a dedicated README covering its features, tech stack and setup instructions.
 
 ## How to run any task
