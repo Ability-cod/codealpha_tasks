@@ -54,7 +54,7 @@ Task1_EcommerceStore/
 1. **Clone the repository**
 ```bash
    git clone https://github.com/YOUR_USERNAME/codealpha_tasks.git
-   cd codealpha_tasks/Task1_EcommerceStore
+   cd codealpha_tasks/codealpha_EcommerceStore
 ```
 
 2. **Create the database**
